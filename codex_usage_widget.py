@@ -403,7 +403,8 @@ class UsageWidget:
         self.last_message_is_error = False
 
         self.root = tk.Tk()
-        self.root.overrideredirect(True)
+        self.root.title("")
+        self.configure_window_chrome(schedule_retry=True)
         self.root.attributes("-topmost", True)
         self.root.attributes("-alpha", self.opacity_percent / 100)
         self.root.resizable(False, False)
@@ -450,6 +451,17 @@ class UsageWidget:
 
     def run(self) -> None:
         self.root.mainloop()
+
+    def configure_window_chrome(self, schedule_retry: bool = False) -> None:
+        self.root.overrideredirect(True)
+        if sys.platform == "darwin":
+            try:
+                self.root.update_idletasks()
+                self.root.tk.call("::tk::unsupported::MacWindowStyle", "style", self.root._w, "plain", "none")
+            except self.tk.TclError:
+                pass
+            if schedule_retry:
+                self.root.after_idle(self.configure_window_chrome)
 
     def refresh_now(self) -> None:
         threading.Thread(target=self.fetch_snapshot, daemon=True).start()
@@ -552,9 +564,8 @@ class UsageWidget:
             child.destroy()
 
     def icon_button(self, parent: Any, command: Any) -> Any:
-        return self.tk.Button(
+        button = self.tk.Label(
             parent,
-            command=command,
             relief="flat",
             bd=0,
             width=3,
@@ -563,8 +574,33 @@ class UsageWidget:
             pady=2,
             font=("Segoe UI Symbol", 11),
             cursor="hand2",
-            takefocus=False,
         )
+        button.is_active = False
+
+        def set_active(active: bool) -> None:
+            button.is_active = active
+            colors = self.colors()
+            button.configure(bg=colors["control_active"] if active else colors["control"])
+
+        def press(_event: Any) -> str:
+            set_active(True)
+            return "break"
+
+        def leave(_event: Any) -> str:
+            set_active(False)
+            return "break"
+
+        def release(event: Any) -> str:
+            active = bool(getattr(button, "is_active", False))
+            set_active(False)
+            if active and 0 <= event.x < button.winfo_width() and 0 <= event.y < button.winfo_height():
+                command()
+            return "break"
+
+        button.bind("<ButtonPress-1>", press)
+        button.bind("<ButtonRelease-1>", release)
+        button.bind("<Leave>", leave)
+        return button
 
     def cycle_language(self) -> None:
         self.language_mode = next_option(LANGUAGE_OPTIONS, self.language_mode)
@@ -655,8 +691,6 @@ class UsageWidget:
             button.configure(
                 bg=colors["control"],
                 fg=colors["text"],
-                activebackground=colors["control_active"],
-                activeforeground=colors["text"],
             )
         if self.opacity_canvas is not None:
             self.opacity_canvas.configure(bg=colors["panel"])

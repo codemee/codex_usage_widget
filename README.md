@@ -6,10 +6,10 @@ Codex Usage Widget is a small always-on-top desktop panel for monitoring Codex r
 
 ## Features
 
-- Always-on-top floating usage panel
+- Always-on-top frameless floating usage panel
 - Remaining usage shown as large percentage cards
 - Traditional Chinese and English UI, with system-language detection
-- Pink light theme and purple dark theme, with system-theme detection
+- Pink light theme and purple dark theme, with system-theme detection and readable controls
 - Adjustable panel opacity, defaulting to 70%
 - System tray mode with percentage icon and usage tooltip
 - Manual refresh with `F5`
