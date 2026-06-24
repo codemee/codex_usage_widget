@@ -478,6 +478,10 @@ class UsageWidget:
             kind, payload = self.events.get_nowait()
             if kind == "ok":
                 self.render_usage(payload)
+            elif kind == "show":
+                self.restore_from_tray()
+            elif kind == "close":
+                self.close()
             elif not self.has_usage_view:
                 self.render_message(payload, error=True)
         if not self.closed:
@@ -757,23 +761,20 @@ class UsageWidget:
             return
         import pystray
 
-        menu = pystray.Menu(
-            pystray.MenuItem(self.tr("tray_show"), self.tray_show, default=True),
-            pystray.MenuItem(self.tr("tray_exit"), self.tray_exit),
-        )
         self.tray_icon = pystray.Icon(
             "codex-usage",
             self.build_tray_image(),
             self.tray_tooltip_text(),
-            menu,
+            self.build_tray_menu(),
         )
         self.tray_icon.run_detached()
+        self.root.after(250, self.refresh_tray_tooltip)
 
     def tray_show(self, _icon: Any = None, _item: Any = None) -> None:
-        self.root.after(0, self.restore_from_tray)
+        self.events.put(("show", None))
 
     def tray_exit(self, _icon: Any = None, _item: Any = None) -> None:
-        self.root.after(0, self.close)
+        self.events.put(("close", None))
 
     def restore_from_tray(self) -> None:
         if self.closed:
@@ -786,9 +787,21 @@ class UsageWidget:
     def rebuild_tray_menu(self) -> None:
         if self.tray_icon is None:
             return
+        self.tray_icon.menu = self.build_tray_menu()
+
+    def build_tray_menu(self) -> Any:
         import pystray
 
-        self.tray_icon.menu = pystray.Menu(
+        summary_items = [
+            pystray.MenuItem(line, None, enabled=False)
+            for line in self.tray_tooltip_text().splitlines()
+            if line.strip()
+        ]
+        if summary_items:
+            summary_items.append(pystray.Menu.SEPARATOR)
+
+        return pystray.Menu(
+            *summary_items,
             pystray.MenuItem(self.tr("tray_show"), self.tray_show, default=True),
             pystray.MenuItem(self.tr("tray_exit"), self.tray_exit),
         )
@@ -797,7 +810,19 @@ class UsageWidget:
         if self.tray_icon is None:
             return
         self.tray_icon.icon = self.build_tray_image()
-        self.tray_icon.title = self.tray_tooltip_text()
+        self.refresh_tray_tooltip()
+        self.rebuild_tray_menu()
+
+    def refresh_tray_tooltip(self) -> None:
+        if self.tray_icon is None:
+            return
+        text = self.tray_tooltip_text()
+        self.tray_icon.title = text
+        if sys.platform == "darwin":
+            try:
+                self.tray_icon._status_item.button().setToolTip_(text)
+            except Exception:
+                pass
 
     def build_tray_image(self) -> Any:
         from PIL import Image, ImageDraw, ImageFont

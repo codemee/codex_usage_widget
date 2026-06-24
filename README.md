@@ -11,7 +11,7 @@ Codex Usage Widget is a small always-on-top desktop panel for monitoring Codex r
 - Traditional Chinese and English UI, with system-language detection
 - Pink light theme and purple dark theme, with system-theme detection and readable controls
 - Adjustable panel opacity, defaulting to 70%
-- System tray mode with percentage icon and usage tooltip
+- System tray mode with percentage icon, usage tooltip, and usage summary menu
 - Manual refresh with `F5`
 
 ## Requirements
@@ -71,6 +71,7 @@ uv run --python 3.13 python codex_usage_widget.py --interval 60 --codex codex
 - Right-click the panel to exit.
 - Double-click the panel or a usage card to minimize to the system tray.
 - Double-click the tray icon, or use the tray menu `Show`, to restore the panel.
+- Open the tray menu to view the latest usage summary if the desktop tooltip is delayed or unavailable.
 - Use the language icon to cycle system, Traditional Chinese, and English.
 - Use the theme icon to cycle system, light, and dark themes.
 - Drag the opacity slider to change transparency.
@@ -80,3 +81,5 @@ uv run --python 3.13 python codex_usage_widget.py --interval 60 --codex codex
 If the widget says Codex login needs attention, open Codex and refresh or restore the ChatGPT login session, then press `F5`.
 
 If the tray icon does not restore the panel on double-click on a specific desktop environment, use the tray icon menu and choose `Show`.
+
+If the desktop tooltip is inconsistent on macOS or another desktop environment, open the tray menu to read the same usage summary.
